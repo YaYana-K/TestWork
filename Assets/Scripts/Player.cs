@@ -1,6 +1,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
@@ -8,13 +9,20 @@ public class Player : MonoBehaviour
     public float Damage;
     public float AtackSpeed;
     public float AttackRange = 2;
+    public float speed = 5f;
 
     private float lastAttackTime = 0;
     private bool isDead = false;
+    private bool isMove = false;
+    private bool isAttack = false;
+    private Vector2 move;
+    private Enemie closestEnemie = null;
+
     public Animator AnimatorController;
 
     private void Update()
     {
+
         if (isDead)
         {
             return;
@@ -26,9 +34,16 @@ public class Player : MonoBehaviour
             return;
         }
 
+        if (isMove)
+        {
+            Move();
+        }
+        if (isAttack)
+        {
+            Attack();
+        }
 
         var enemies = SceneManager.Instance.Enemies;
-        Enemie closestEnemie = null;
 
         for (int i = 0; i < enemies.Count; i++)
         {
@@ -53,23 +68,7 @@ public class Player : MonoBehaviour
             }
 
         }
-
-        if (closestEnemie != null)
-        {
-            var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
-            if (distance <= AttackRange)
-            {
-                if (Time.time - lastAttackTime > AtackSpeed)
-                {
-                    //transform.LookAt(closestEnemie.transform);
-                    transform.transform.rotation = Quaternion.LookRotation(closestEnemie.transform.position - transform.position);
-
-                    lastAttackTime = Time.time;
-                    closestEnemie.Hp -= Damage;
-                    AnimatorController.SetTrigger("Attack");
-                }
-            }
-        }
+        
     }
 
     private void Die()
@@ -80,5 +79,68 @@ public class Player : MonoBehaviour
         SceneManager.Instance.GameOver();
     }
 
+    public void OnMove(InputAction.CallbackContext context)
+    {
+        move = context.ReadValue<Vector2>();
+        isMove = true;
+    }
 
+    private void Move()
+    {
+        Vector3 movement = new Vector3(move.x, 0f, move.y) * speed * Time.deltaTime;
+        if (movement != Vector3.zero)
+        {
+            transform.rotation = Quaternion.Slerp(transform.rotation, Quaternion.LookRotation(movement), 0.10f);
+            AnimatorController.SetFloat("Speed", speed);
+        }
+        else
+        {
+            isMove = false;
+            AnimatorController.SetFloat("Speed", 0);
+        }
+        
+        transform.Translate(movement, Space.World);
+    }
+
+    public void OnAttack(InputAction.CallbackContext context)
+    {
+        isAttack = true;
+    }
+
+    private void Attack()
+    {
+        if (Time.time - lastAttackTime > AtackSpeed)
+        {
+            lastAttackTime = Time.time;
+            AnimatorController.SetTrigger("Attack");
+            if (closestEnemie != null)
+            {
+                var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
+                if (distance <= AttackRange)
+                {
+                    transform.transform.rotation = Quaternion.LookRotation(closestEnemie.transform.position - transform.position);
+                    closestEnemie.Hp -= Damage;
+                }
+            }
+        }
+        isAttack = false;
+    }
+
+    public void SuperAttack()
+    {
+        if(!isDead)
+        {
+            AnimatorController.SetTrigger("DoubleAttack");
+            Debug.Log("super attack");
+            if (closestEnemie != null)
+            {
+                var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
+                if (distance <= AttackRange)
+                {
+                    transform.transform.rotation = Quaternion.LookRotation(closestEnemie.transform.position - transform.position);
+                    closestEnemie.Hp -= Damage * 2;
+                }
+            }
+        }
+    }
 }
