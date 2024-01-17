@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -10,9 +8,9 @@ public class Player : MonoBehaviour
     public float AtackSpeed;
     public float AttackRange = 2;
     public float speed = 5f;
+    public bool isDead { get; private set; } = false;
 
     private float lastAttackTime = 0;
-    private bool isDead = false;
     private bool isMove = false;
     private bool isAttack = false;
     private Vector2 move;
@@ -66,7 +64,6 @@ public class Player : MonoBehaviour
             {
                 closestEnemie = enemie;
             }
-
         }
         
     }
@@ -115,8 +112,8 @@ public class Player : MonoBehaviour
             AnimatorController.SetTrigger("Attack");
             if (closestEnemie != null)
             {
-                var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
-                if (distance <= AttackRange)
+                
+                if (CanAttackTarget())
                 {
                     transform.transform.rotation = Quaternion.LookRotation(closestEnemie.transform.position - transform.position);
                     closestEnemie.Hp -= Damage;
@@ -131,16 +128,20 @@ public class Player : MonoBehaviour
         if(!isDead)
         {
             AnimatorController.SetTrigger("DoubleAttack");
-            Debug.Log("super attack");
             if (closestEnemie != null)
             {
-                var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
-                if (distance <= AttackRange)
+                if (CanAttackTarget())
                 {
                     transform.transform.rotation = Quaternion.LookRotation(closestEnemie.transform.position - transform.position);
                     closestEnemie.Hp -= Damage * 2;
                 }
             }
         }
+    }
+    public bool CanAttackTarget()
+    {
+        if(closestEnemie == null) return false;
+        var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
+        return distance <= AttackRange;
     }
 }
