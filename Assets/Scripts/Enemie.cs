@@ -1,13 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
+using System;
 using UnityEngine;
 using UnityEngine.AI;
 
 public class Enemie : MonoBehaviour
 {
-    public float Hp;
-    public float Damage;
-    public float AtackSpeed;
+    public static event Action<Enemie> OnDeath;
+    public float Hp = 2;
+    public float Damage = 1;
+    public float AtackSpeed = 1;
     public float AttackRange = 2;
     [SerializeField] float recoveryHp = 2;
 
@@ -35,40 +35,52 @@ public class Enemie : MonoBehaviour
 
         if (Hp <= 0)
         {
-            Die();
             Agent.isStopped = true;
+            Die();
             return;
         }
 
-        var distance = Vector3.Distance(transform.position, SceneManager.Instance.Player.transform.position);
-     
-        if (distance <= AttackRange)
+        
+        if(SceneManager.Instance.Player.isDead == false)
         {
-            Agent.isStopped = true;
-            if (Time.time - lastAttackTime > AtackSpeed)
+            var distance = Vector3.Distance(transform.position, SceneManager.Instance.Player.transform.position);
+
+            if (distance <= AttackRange)
             {
-                lastAttackTime = Time.time;
-                SceneManager.Instance.Player.ChangeHp(-Damage);
-                AnimatorController.SetTrigger("Attack");
+                Agent.isStopped = true;
+                if (Time.time - lastAttackTime > AtackSpeed)
+                {
+                    lastAttackTime = Time.time;
+                    SceneManager.Instance.Player.ChangeHp(-Damage);
+                    AnimatorController.SetTrigger("Attack");
+                }
             }
+            else
+            {
+                Agent.isStopped = false;
+                Agent.SetDestination(SceneManager.Instance.Player.transform.position);
+            }
+            AnimatorController.SetFloat("Speed", Agent.speed);
+            Debug.Log(Agent.speed);
         }
         else
         {
-            Agent.SetDestination(SceneManager.Instance.Player.transform.position);
+            Agent.isStopped = true;
+            AnimatorController.SetFloat("Speed", 0);
         }
-        AnimatorController.SetFloat("Speed", Agent.speed); 
-        Debug.Log(Agent.speed);
-
     }
 
-
-
-    private void Die()
+    public void Die()
     {
         SceneManager.Instance.RemoveEnemie(this);
         isDead = true;
         AnimatorController.SetTrigger("Die");
         SceneManager.Instance.Player.ChangeHp(recoveryHp);
+        OnDeath?.Invoke(this);
+        Invoke("DestroyObj", 2);
     }
-
+    private void DestroyObj()
+    {
+        Destroy(gameObject);
+    }
 }
