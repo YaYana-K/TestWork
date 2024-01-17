@@ -1,10 +1,11 @@
-using System.Collections;
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class SceneManager : MonoBehaviour
 {
+    public static event Action<int, int> OnWaveChanged;
     public static SceneManager Instance;
 
     public Player Player;
@@ -55,11 +56,11 @@ public class SceneManager : MonoBehaviour
         var wave = Config.Waves[currWave];
         foreach (var character in wave.Characters)
         {
-            Vector3 pos = new Vector3(Random.Range(-10, 10), 0, Random.Range(-10, 10));
+            Vector3 pos = new Vector3(UnityEngine.Random.Range(-10, 10), 0, UnityEngine.Random.Range(-10, 10));
             Instantiate(character, pos, Quaternion.identity);
         }
         currWave++;
-
+        EmitWaveChanged(Config.Waves.Length, currWave);
     }
 
     public void Reset()
@@ -67,5 +68,8 @@ public class SceneManager : MonoBehaviour
         UnityEngine.SceneManagement.SceneManager.LoadScene(0);
     }
     
-
+    public void EmitWaveChanged(int totalWave, int curWave)
+    {
+        OnWaveChanged?.Invoke(totalWave, curWave);
+    }
 }
