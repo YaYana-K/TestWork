@@ -1,8 +1,11 @@
+using System;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
 public class Player : MonoBehaviour
 {
+    public static event Action<float> OnHpChanged;
+
     public float Hp;
     public float Damage;
     public float AtackSpeed;
@@ -143,5 +146,15 @@ public class Player : MonoBehaviour
         if(closestEnemie == null) return false;
         var distance = Vector3.Distance(transform.position, closestEnemie.transform.position);
         return distance <= AttackRange;
+    }
+    public void ChangeHp(float count)
+    {
+        if (!isDead)
+        {
+            Hp += count;
+            Debug.Log(Hp);
+            OnHpChanged?.Invoke(Hp);
+        }
+        
     }
 }

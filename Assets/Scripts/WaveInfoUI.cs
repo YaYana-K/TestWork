@@ -4,6 +4,7 @@ using TMPro;
 public class WaveInfoUI : MonoBehaviour
 {
     private TMP_Text waveText;
+
     private void Start()
     {
         waveText = GetComponent<TMP_Text>();
